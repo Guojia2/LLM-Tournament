@@ -46,4 +46,18 @@ import re
 from tasks.tasks import Task
 
 
+class NegotiationGame(Task):
+
+    def __init__(self, items_per_agent=3, max_rounds=10, hidden_inventory=False):
+        self.items_per_agent = items_per_agent
+        self.max_rounds = max_rounds
+        self.hidden_inventory = hidden_inventory
+
+        self.item_pool = [
+            "Apple", "Banana", "Orange", "Grape", "Mango",
+            "Carrot", "Broccoli", "Corn", "Potato", "Tomato",
+            "Bread", "Cheese", "Milk", "Eggs", "Butter"
+        ]
+
+
 
