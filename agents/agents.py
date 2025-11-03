@@ -1,10 +1,15 @@
 class Agent:
-    def __init__(self, name, model=None):
+    def __init__(self, name, model=None, model_config=None):
         self.name = name
-        self.model = model  # could be OpenAI API, local model, or dummy
+        self.model = model
+        self.model_config = model_config or {}
 
     def act(self, observation):
-        """Return an action given the observation."""
-        # For now, return something random/dummy
-        return "dummy_action"
+        if self.model == "dummy":
+            return "dummy_action"
+        # Call LLM. Can be API, can be local model.
+        return self._call_llm(observation)
 
+    def _call_llm(self, observation):
+        # Placeholder for actual LLM calls for now.
+        return "placeholder"
