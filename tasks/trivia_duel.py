@@ -1,8 +1,9 @@
 import random
+from tasks.tasks import Task
 
 
 
-class TriviaTask:
+class TriviaDuel(Task):
     def __init__(self, questions):
         self.questions = questions
 
