@@ -92,9 +92,9 @@ class NegotiationGame(Task):
                     **{item: random.randint(3,10) for item in agent0_items}
                 }
             },
-            "conversation": []
-            "current_proposal": None
-            "deal_completed": False
+            "conversation": [],
+            "current_proposal": None,
+            "deal_completed": False,
             "final_trade": None
         }
         return state
