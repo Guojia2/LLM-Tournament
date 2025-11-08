@@ -6,7 +6,7 @@ sys.path.insert(0, str(project_root))
 
 from tasks.tasks import Task
 from tasks.trivia_duel import TriviaDuel
-from tasks.negotiation_game import *
+from tasks.negotiation_game import NegotiationGame
 from agents.agents import Agent
 from engine.orchestration_engine import run_match
 
