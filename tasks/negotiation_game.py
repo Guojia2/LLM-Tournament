@@ -148,6 +148,110 @@ class NegotiationGame(Task):
 
         return obs
 
+    def step(self, state, actions):
+        for agentID,action in actions.items():
+            state["conversation"].append({
+                "round": state["round"],
+                "agent": agentID,
+                "message": action
+            })
+            #check for acceptance
+            for agentID, action in actions.items():
+                if "ACCEPT" in action.upper():
+                    if state["current_proposal"]:
+                        state["deal_completed"] = True
+                        state["final_trade"] = state["current_proposal"]
+                        state["done"] = True
+                        self.execute_trade(state,state["current_proposal"])
+                        return state
+            # check for proposals:
+            for agentID, action in actions.items():
+                proposal = self._parse_proposal(action,agentID, state)
+                if proposal:
+                    state["current_proposal"] = proposal
+            state["round"] += 1
 
+            if state["round"] >= self.max_rounds:
+                state["done"] = True
 
+            return state
 
+    def _parse_proposal(self, message, proposer_id, state):
+        if "PROPOSE" not in message.upper():
+            return None
+
+        # im not going to try to deny it.  I used an LLM to generate much of this stuff.
+        # It would have taken me weeks to write and debug a regex statement like this
+        try:
+            pattern = r"give\s+(.*?)\s+for\s+(?:your\s+)?(.*?)(?:\.|$)"
+            match = re.search(pattern, message, re.IGNORECASE)
+
+            if match:
+                gives_str = match.group(1)
+                gets_str = match.group(2)
+                gives = [item.strip().title() for item in re.split(r',|\sand\s', gives_str)]
+                gets = [item.strip().title() for item in re.split(r',|\sand\s', gets_str)]
+
+            return{
+                "proposer": proposer_id,
+                "proposer_gives": gives,
+                "proposer_gets": gets
+            }
+        except:
+            return None
+        return None
+
+    def execute_trade(self, state, proposal):
+        if not proposal:
+            return
+        proposer = proposal["proposer"]
+        accepter = 1 - proposer
+
+        gives = proposal["proposer_gives"]
+        gets = proposal["proposer_gets"]
+
+        # transfer the items as specified in the trade agreement
+        for item in gives:
+            if item in state["inventories"][proposer]:
+                state["inventories"][proposer].remove(item)
+                state["inventories"][accepter].append(item)
+        for item in gets:
+            if item in state["inventories"][accepter]:
+                state["inventories"][accepter].remove(item)
+                state["inventories"][proposer].append(item)
+
+    def score(self, state):
+        scores = {}
+
+        for agentId in [0, 1]:
+            initial_value = sum(
+                state["valuations"][agentId][item]
+                for item in state["initial_inventories"][agentId]
+            )
+            final_value = sum(
+                state["valuations"][agentId][item]
+                for item in state["inventories"][agentId]
+            )
+
+            scores[agentId] = {
+                "initial_value": initial_value,
+                "final_value": final_value,
+                "gain": final_value - initial_value,
+                "deal_completed": state["deal_completed"]
+            }
+
+        return scores
+    def render(self, state):
+        output = f"=== Negotiation Game - Round {state['round']} ===\n\n"
+
+        for agentId in [0, 1]:
+            output += f"Agent {agentId} Inventory: {', '.join(state['inventories'][agentId])}\n"
+
+        output += f"\nDeal Completed: {state['deal_completed']}\n"
+
+        if state['conversation']:
+            output += "\nConversation:\n"
+            for msg in state['conversation']:
+                output += f"  Agent {msg['agent']}: {msg['message']}\n"
+
+        return output
